@@ -20,12 +20,12 @@ class Event:
         self.owner = owner
         self.id = id
 
-        # Key: Profile.id, Value: Fields
+        # Key: Profile.id, Values: {Fields, Attending}
         self.attendees = {}
 
         # TODO: Research pandas.MultiIndex and/or xarray
-        # Depth of 6 -> three fields + recent penalty + attending + pairing
-        self.pair_matrix = np.zeros(shape=(-1, -1, 6))
+        # Depth of 5 -> three fields + recent penalty  + pairing
+        self.pair_matrix = np.zeros(shape=(-1, -1, 5))
 
         # TODO: Figure this out
         self.access_code = None
