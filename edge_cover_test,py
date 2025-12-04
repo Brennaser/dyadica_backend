@@ -7,8 +7,8 @@ import pandas as pd
 
 def edge_cover(w):
 
-    best_pair = np.argmax(w, axis=1)
-    best_weights = [weights[row].iloc[best_pair[i]] for i, row in enumerate(weights)]
+    best_pair = np.nanargmax(w, axis=1)
+    best_weights = [w[row].iloc[best_pair[i]] for i, row in enumerate(w)]
     sorted_pairs = np.argsort(best_weights)[::-1]
 
     paired = np.full((len(best_pair)), False)
@@ -38,33 +38,45 @@ def edge_cover(w):
 
 # %%
 def adjust_weights(pairs, w, original_w):
-    pass
+
+    for row in w.index:
+        for col in w.columns:
+            if w[row][col] <= original_w[row][col]:
+                w[row][col] += 0.1
+    
+    for a, b in pairs:
+        w[a][b] = 0
+        w[b][a] = 0
 
 # where w < 1 -> increment
 
 
 #  %%
-weights = [[-1, -1, 3, -1, 1, 2],
-           [-1, -1, 4, -1, 3, 4],
-           [ 3,  4, -1, 2, 2, 3],
-           [-1, -1, 2, -1, 4, 1],
-           [ 1, 3, 2, 4, -1, -1],
-           [ 2, 4, 3, 1, -1, -1],]
+weights = [[np.nan, np.nan, 3, np.nan, 1, 2],
+           [np.nan, np.nan, 4, np.nan, 3, 4],
+           [ 3,  4, np.nan, 2, 2, 3],
+           [np.nan, np.nan, 2, np.nan, 4, 1],
+           [ 1, 3, 2, 4, np.nan, np.nan],
+           [ 2, 4, 3, 1, np.nan, np.nan],]
 
 # weights = np.array(weights) # TODO: normalize
 weights = pd.DataFrame(weights)
-original_weights = weights.copy()
+weights = (weights - weights.min().min()) / (weights.max().max() - weights.min().min())
 
 weights.index = ['one', 'two', 'three', 'four', 'five', 'six']
 weights.columns = ['one', 'two', 'three', 'four', 'five', 'six']
 
+original_weights = weights.copy()
 
-pairs = edge_cover(weights)
-adjust_weights(pairs, weights, original_weights)
-pairs = edge_cover(weights)
+for i in range(10):
+    print(f"Round {i + 1}:")
+    pairs = edge_cover(weights)
 
-# TODO: adjust weights after round of dancing
-# TODO: maybe add a bonus to a dancer's edges if they were not paired up this round???
+    [print(f"\t{a}\t{b}") for a, b in pairs]
+
+    adjust_weights(pairs, weights, original_weights)
+
+
 
 
 # %%
