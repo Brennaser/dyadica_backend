@@ -77,6 +77,32 @@ for i in range(10):
     adjust_weights(pairs, weights, original_weights)
 
 
+# %%
+from Field import Field, Field_Type
+from Event import Event
+
+event = Event("name", "date", 'location', 1, 1)
+
+style = Field(Field_Type.Style, ["lindy", "westie"], False, [1, 1])
+style1 = Field(Field_Type.Style, ["lindy", "westie"], False, [1, 0])
+
+pos = Field(Field_Type.Position, ['open', 'closed', 'close embrace'], False, [1, 1, 1])
+pos1 = Field(Field_Type.Position, ['open', 'closed', 'close embrace'], False, [0, 1, 0])
+
+
+event.add_attendee(1, [style, pos1])
+event.check_in_attendee(1)
+
+event.add_attendee(2, [style1, pos])
+event.check_in_attendee(2)
+
+event.add_attendee(3, [style1, pos1])
+event.check_in_attendee(3)
+
+event.add_attendee(4, [style1, pos])
+event.check_in_attendee(4)
+
+
 
 
 # %%

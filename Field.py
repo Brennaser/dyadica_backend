@@ -28,7 +28,7 @@ class Field:
                 # TODO: finish
                 pass
             else:
-                for i in len(self.selected):
+                for i in range(len(self.selected)):
                     if self.selected[i] == other.selected[i]:
                         score += 1
                 
