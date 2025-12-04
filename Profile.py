@@ -8,11 +8,10 @@ from Field import Field
 
 class Profile:
 
-    def __init__(self, name: str, fields: list[Field]):
+    def __init__(self, id: int, name: str, fields: list[Field]):
+        self.id = id
         self.name = name
-
         self.fields = fields
-
         self.pairing = False
 
 
