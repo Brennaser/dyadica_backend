@@ -1,5 +1,6 @@
 # %%
 import numpy as np
+import pandas as pd
 
 
 # %%
@@ -7,19 +8,20 @@ import numpy as np
 def edge_cover(w):
 
     best_pair = np.argmax(w, axis=1)
-    best_weights = [row[best_pair[i]] for i, row in enumerate(weights)]
+    best_weights = [weights[row].iloc[best_pair[i]] for i, row in enumerate(weights)]
     sorted_pairs = np.argsort(best_weights)[::-1]
 
     paired = np.full((len(best_pair)), False)
     edges = []
+    names = w.index
 
-    for dancer_a in sorted_pairs:
-        dancer_b = best_pair[dancer_a]
+    for dancer_a_idx in sorted_pairs:
+        dancer_b_idx = best_pair[dancer_a_idx]
         
-        if not paired[dancer_a] and not paired[dancer_b]:
-            edges.append((dancer_a, dancer_b))
-            paired[dancer_a] = True
-            paired[dancer_b] = True
+        if not paired[dancer_a_idx] and not paired[dancer_b_idx]:
+            edges.append((names[dancer_a_idx], names[dancer_b_idx]))
+            paired[dancer_a_idx] = True
+            paired[dancer_b_idx] = True
 
         # FIX: No recovery if best_pair[dancer_a] is already paired
         # ^^ implies disagreement between dancers
@@ -35,7 +37,7 @@ def edge_cover(w):
 
 
 # %%
-def adjust_weights(pairs, w):
+def adjust_weights(pairs, w, original_w):
     pass
 
 # where w < 1 -> increment
@@ -49,11 +51,17 @@ weights = [[-1, -1, 3, -1, 1, 2],
            [ 1, 3, 2, 4, -1, -1],
            [ 2, 4, 3, 1, -1, -1],]
 
-weights = np.array(weights) # TODO: normalize
+# weights = np.array(weights) # TODO: normalize
+weights = pd.DataFrame(weights)
+original_weights = weights.copy()
+
+weights.index = ['one', 'two', 'three', 'four', 'five', 'six']
+weights.columns = ['one', 'two', 'three', 'four', 'five', 'six']
+
 
 pairs = edge_cover(weights)
-adjust_weights(pairs, weights)
-pairs = edge_cover
+adjust_weights(pairs, weights, original_weights)
+pairs = edge_cover(weights)
 
 # TODO: adjust weights after round of dancing
 # TODO: maybe add a bonus to a dancer's edges if they were not paired up this round???
