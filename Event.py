@@ -35,12 +35,18 @@ class Event:
     
     def add_attendee(self, attendee_id: int, fields: list[Field]):
         self.attendees[attendee_id] = {"fields": fields,
-                                       "checked_in": False}
+                                       "checked_in": False,
+                                       "dancing": False}
 
 
     def check_in_attendee(self, attendee_id: int):
         self.attendees[attendee_id]["checked_in"] = True
+        self.attendees[attendee_id]['dancing'] = True
 
+
+    def toggle_attendee_dancing(self, attendee_id: int):
+        self.attendees[attendee_id]['dancing'] = not self.attendees[attendee_id]['dancing']
+        
 
     def start_event(self):
 
@@ -92,15 +98,23 @@ class Event:
 
 
     def make_pairs(self):
-        best_pair = np.nanargmax(self.pair_scores, axis=1)
-        best_weights = [self.pair_scores[row].iloc[best_pair[i]] for i, row in enumerate(self.pair_scores)]
+
+        # Mask out those who are not dancing
+        dancing_mask = pd.DataFrame.from_dict(self.attendees, orient="index")
+        dancing_mask = dancing_mask[dancing_mask['dancing']].index
+
+        dancing = self.pair_scores.loc[dancing_mask][dancing_mask]
+
+
+        best_pair = np.nanargmax(dancing, axis=1)
+        best_weights = [dancing[row].iloc[best_pair[i]] for i, row in enumerate(dancing)]
         sorted_pairs = np.argsort(best_weights)[::-1]
 
         paired = np.full((len(best_pair)), False)
         pairings = []
 
         # TODO: refactor to attendee_ids
-        names = self.pair_scores.index
+        names = dancing.index
 
         for dancer_a_idx in sorted_pairs:
             dancer_b_idx = best_pair[dancer_a_idx]
