@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd 
 
 from Field import Field
+from Profile import Profile
 
 class Event:
 
@@ -33,8 +34,8 @@ class Event:
         self.max_pair_scores = None
 
     
-    def add_attendee(self, attendee_id: int, fields: list[Field]):
-        self.attendees[attendee_id] = {"fields": fields,
+    def add_attendee(self, attendee: Profile):
+        self.attendees[attendee.id] = {"profile": attendee,
                                        "checked_in": False,
                                        "dancing": False}
 
@@ -46,7 +47,7 @@ class Event:
 
     def toggle_attendee_dancing(self, attendee_id: int):
         self.attendees[attendee_id]['dancing'] = not self.attendees[attendee_id]['dancing']
-        
+
 
     def start_event(self):
 
@@ -62,14 +63,17 @@ class Event:
 
         for dancer_a in dancers.index:
 
-            a_fields = dancers['fields'][dancer_a]
+            a_fields = dancers['profile'][dancer_a].fields
 
             # drop -> do not try to partner a person with themself
             for dancer_b in dancers.drop(dancer_a).index:
+
+                # TODO: if one dancer has the other blocked, continue
+
                 if np.isnan(self.pair_scores[dancer_a][dancer_b]):
                     pair_score = 0
 
-                    b_fields = dancers['fields'][dancer_b]
+                    b_fields = dancers['profile'][dancer_b].fields
 
                     for i in range(len(a_fields)):
                         score = a_fields[i].get_score(b_fields[i])

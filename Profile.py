@@ -8,15 +8,10 @@ from Field import Field
 
 class Profile:
 
-    def __init__(self, id: int, name: str, fields: list[Field]):
+    def __init__(self, id: int, name: str, fields: list[Field], blocked: list[int], events: list):
         self.id = id
         self.name = name
         self.fields = fields
-        self.pairing = False
-
-
-    def toggle_pairing(self):
-        self.pairing = not self.pairing
-
-    
+        self.blocked = blocked
+        self.events = events
 

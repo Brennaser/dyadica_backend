@@ -80,6 +80,7 @@ for i in range(10):
 # %%
 from Field import Field, Field_Type
 from Event import Event
+from Profile import Profile
 
 event = Event("name", "date", 'location', 1, 1)
 
@@ -90,16 +91,22 @@ pos = Field(Field_Type.Position, ['open', 'closed', 'close embrace'], False, [1,
 pos1 = Field(Field_Type.Position, ['open', 'closed', 'close embrace'], False, [0, 1, 0])
 
 
-event.add_attendee(1, [style, pos1])
+p = Profile(1, "1", [style, pos1], [], ['1'])
+p2 = Profile(2, "2", [style1, pos], [], ['1'])
+p3 = Profile(3, "3", [style1, pos1], [], ['1'])
+p4 = Profile(4, "4", [style1, pos], [], ['1'])
+
+
+event.add_attendee(p)
 event.check_in_attendee(1)
 
-event.add_attendee(2, [style1, pos])
+event.add_attendee(p2)
 event.check_in_attendee(2)
 
-event.add_attendee(3, [style1, pos1])
+event.add_attendee(p3)
 event.check_in_attendee(3)
 
-event.add_attendee(4, [style1, pos])
+event.add_attendee(p4)
 event.check_in_attendee(4)
 
 
