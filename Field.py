@@ -25,8 +25,11 @@ class Field:
             score = 0 
 
             if self.magnetic:
-                # TODO: finish
-                pass
+                # NOTE: Magnetic assumes the Field has only two options
+                if (self.selected[0] and other.selected[1]) or (self.selected[1] and other.selected[0]):
+                    score = 1
+                else:
+                    score = -1
             else:
                 for i in range(len(self.selected)):
                     if self.selected[i] == other.selected[i]:
