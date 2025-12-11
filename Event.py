@@ -49,6 +49,23 @@ class Event:
         self.attendees[attendee_id]['dancing'] = not self.attendees[attendee_id]['dancing']
 
 
+    # TODO: Q: this should probably be static, right?
+    def calculate_pair_score(self, a_fields: dict, b_fields: dict):
+        pair_score = 0
+
+        for field in a_fields.keys():
+            score = a_fields[field].get_score(b_fields[field])
+
+            # if the pair is invaild -> stop evaluating this pair
+            if score == -1:
+                pair_score = np.nan
+                break
+            else:
+                pair_score += score
+        
+        return pair_score
+
+
     def start_event(self):
 
         dancers = pd.DataFrame.from_dict(self.attendees, orient="index")
@@ -68,22 +85,17 @@ class Event:
             # drop -> do not try to partner a person with themself
             for dancer_b in dancers.drop(dancer_a).index:
 
-                # TODO: if one dancer has the other blocked, continue
+                # if one dancer has the other blocked, leave pair_score as np.nan
+                if dancer_b in dancers["profile"][dancer_a].blocked or \
+                    dancer_a in dancers['profile'][dancer_b].blocked:
+                    continue
 
+                # if neither dancer has the other blocked
                 if np.isnan(self.pair_scores[dancer_a][dancer_b]):
-                    pair_score = 0
 
                     b_fields = dancers['profile'][dancer_b].fields
 
-                    for i in range(len(a_fields)):
-                        score = a_fields[i].get_score(b_fields[i])
-
-                        # if the pair is invaild -> stop evaluating this pair
-                        if score == -1:
-                            pair_score = np.nan
-                            break
-                        else:
-                            pair_score += score
+                    pair_score = self.calculate_pair_score(a_fields, b_fields)
                     
                     self.pair_scores[dancer_a][dancer_b] = pair_score
                     self.pair_scores[dancer_b][dancer_a] = pair_score
@@ -99,6 +111,30 @@ class Event:
 
         # Tell Dyadica to start checking this event
         self.ongoing = True
+
+
+    def new_blocked_pair(self, dancer_a: int, dancer_b: int):
+        self.pair_scores[dancer_a][dancer_b] = np.nan
+        self.pair_scores[dancer_b][dancer_a] = np.nan
+
+        self.max_pair_scores[dancer_a][dancer_b] = np.nan
+        self.max_pair_scores[dancer_b][dancer_a] = np.nan
+
+
+    # Do users even need to be able to unblock a user during an event???
+    def unblock_pair(self, dancer_a: int, dancer_b: int):
+
+        a_fields = self.attendees[dancer_a]['profile'].fields
+        b_fields = self.attendees[dancer_b]['profile'].fields
+
+        pair_score = self.calculate_pair_score(a_fields, b_fields)
+        
+        # FIX: Not normalized!!!!!
+        self.pair_scores[dancer_a][dancer_b] = pair_score
+        self.pair_scores[dancer_b][dancer_a] = pair_score
+
+        self.max_pair_scores[dancer_a][dancer_b] = pair_score
+        self.max_pair_scores[dancer_b][dancer_a] = pair_score
 
 
     def make_pairs(self):
