@@ -8,10 +8,34 @@ from Field import Field
 
 class Profile:
 
-    def __init__(self, id: int, name: str, fields: list[Field], blocked: list[int], events: list):
+    def __init__(self, id: int, name: str, fields: dict):
         self.id = id
         self.name = name
         self.fields = fields
-        self.blocked = blocked
-        self.events = events
+        self.blocked = set()
+        self.events = set()
+
+
+    def update_name(self, new_name: str):
+        self.name = new_name
+
+
+    def update_fields(self, new_fields: dict):
+        self.fields = new_fields
+
+
+    def block_user(self, other_id: int):
+        self.blocked.add(other_id)
+
+
+    def unblock_user(self, other_id: int):
+        self.blocked.discard(other_id)
+
+
+    def add_event(self, new_event: set):
+        self.events.add(new_event)
+
+
+    def remove_event(self, event: set):
+        self.events.discard(event)
 
