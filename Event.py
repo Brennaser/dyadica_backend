@@ -139,6 +139,8 @@ class Event:
 
     def make_pairs(self):
 
+        # TODO: Only mask out people who are not dancing when making pairs
+
         # Mask out those who are not dancing
         dancing_mask = pd.DataFrame.from_dict(self.attendees, orient="index")
         dancing_mask = dancing_mask[dancing_mask['dancing']].index
@@ -164,12 +166,14 @@ class Event:
                 paired[dancer_a_idx] = True
                 paired[dancer_b_idx] = True
 
-            # FIX: No recovery if best_pair[dancer_a] is already paired
+            # TODO: FIX: No recovery if best_pair[dancer_a] is already paired
             # ^^ implies disagreement between dancers
             # best_pair[dancer_a] = next highest weight index in w[dancer_a]
             # NOTE: Greedy in this sense; could potentially account for that by changing best_pair values to try and ensure they still get a partner???
             # Even so, this algorithm is likely still going to be greedy and that's honestly fine
             # Our primary concern is making pairs; approximate solutions are acceptable
+
+            # Could rerun the highest score stuff masking out the paired dancers
 
             # Finish early if all dancers have been paired
             if np.all(paired):
