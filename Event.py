@@ -113,6 +113,10 @@ class Event:
         self.ongoing = True
 
 
+    def end_event(self):
+        self.ongoing = False
+
+
     def new_blocked_pair(self, dancer_a: int, dancer_b: int):
         self.pair_scores[dancer_a][dancer_b] = np.nan
         self.pair_scores[dancer_b][dancer_a] = np.nan

@@ -1,13 +1,19 @@
+from flask import Flask, jsonify
+
 from Field import Field, Field_Type
 from Event import Event
 from Profile import Profile
 
+#TODO update
 """
 Main executable for Dyadica.
 
 author: Brenn Sermania
 version: 11/20/2025
 """
+
+app = Flask(__name__)
+
 def save_event_data():
     pass
 
@@ -24,7 +30,117 @@ def load_profile_data():
     pass
 
 
-if __name__ == "__main__":
+def get_profile(user_id: int) -> Profile:
+    pass
+
+
+def new_profile_id():
+    pass
+
+def get_event(event_id: int) -> Event:
+    pass
+
+
+def new_event_id():
+    pass
+
+@app.route('/update_profile', methods=[])
+def update_profile(user_id: int):
+
+    # Q: How is info being passed? what format???
+    # Q: how to identify and make new profiles??? or i guess know when to allocate a new user id
+    # you plan on using local (phone storge) to keep the id linked to the device
+    # if that local data does not exist, make a new proofile
+    # does introduc the issue of how can users log in on other devices, but ya know what?
+    # it'll work for a user study
+
+    profile = get_profile(user_id)
+
+    if profile:
+        pass
+    else:
+        pass
+
+    pass
+
+
+@app.route('/rsvp', methods=[])
+def rsvp(user_id: int, event_id: int):
+
+    profile = get_profile(user_id)
+    event = get_event(event_id)
+
+    if profile and event:
+        event.add_attendee(profile)
+    else:
+        pass
+
+
+@app.route('/check_in', methods=[])
+def check_in(user_id: int, event_id: int):
+    
+    profile = get_profile(user_id)
+    event = get_event(event_id)
+
+    if profile and event:
+        event.check_in_attendee(user_id)
+    else:
+        pass
+
+
+@app.route('/toggle_user_break', methods=[])
+def toggle_user_break(user_id: int):
+
+    # bro, wires, everywhere. the flag for this is in the event class, but you get the user id
+    # maybe add a current event attr in Profile?
+    # Or loop over profile event list for the first (and theoretically only) active one <- <- <-
+
+    pass
+
+
+# @app.route('/block_user', methods=[])
+# def block_user(user_id_a: int, user_id_b: int):
+#     pass
+
+
+@app.route('/new_event', methods=['POST'])
+def make_event():
+    pass
+
+@app.route('/update_event', methods=[])
+def update_event(event_id: int):
+
+    # Q: same q as update_profile, how we getting that data???
+
+    pass
+
+
+@app.route('/start_event', methods=[])
+def start_event(event_id: int):
+
+    event = get_event(event_id)
+
+    if event:
+        event.start_event()
+    else:
+        pass
+
+
+@app.route('/end_event', methods=[])
+def end_event(event_id: int):
+    
+    event = get_event(event_id)
+
+    if event:
+        event.end_event()
+    else:
+        pass
+
+
+@app.route('/make_pairs', methods= ["GET"])
+def make_pairs():
+
+    #TODO make better lmao
     event = Event("name", "date", 'location', 1, 1)
 
     lead = Field(Field_Type.Lead_Follow, ["lead", "follow"], True, [1, 0])
@@ -62,11 +178,29 @@ if __name__ == "__main__":
 
     event.start_event()
 
-    for i in range(5):
-        print(f"Round {i}:")
 
-        pairs = event.make_pairs()
+    pairs = event.make_pairs()
 
-        [print(f"\t{a} {b}") for a, b in pairs]
 
-        event.adjust_scores(pairs)
+    event.adjust_scores(pairs)
+
+    return jsonify({"pairs": int(pairs[0][0])})
+
+
+# TODO: figure out the logistics on this
+# @app.route()
+def accept_decline():
+    # Q: What happens on decline? Repaired? just not paired?
+    pass
+
+
+# Q: how does starting a dance fit with accept/decline??? esspecially if you don't get the location detection going
+# is it really needed?
+
+
+if __name__ == "__main__":
+    # TODO: Load events
+    # TODO: load profiles
+    # app.run(host='0.0.0.0', debug=True)
+    app.run(debug=True)
+

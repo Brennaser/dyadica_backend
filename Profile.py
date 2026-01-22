@@ -32,10 +32,10 @@ class Profile:
         self.blocked.discard(other_id)
 
 
-    def add_event(self, new_event: set):
+    def add_event(self, new_event: int):
         self.events.add(new_event)
 
 
-    def remove_event(self, event: set):
+    def remove_event(self, event: int):
         self.events.discard(event)
 
