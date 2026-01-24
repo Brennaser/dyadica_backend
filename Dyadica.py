@@ -1,10 +1,12 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, redirect
+
+from extensions import db
 
 from Field import Field, Field_Type
 from Event import Event
 from Profile import Profile
 
-#TODO update
+# TODO update
 """
 Main executable for Dyadica.
 
@@ -12,36 +14,51 @@ author: Brenn Sermania
 version: 11/20/2025
 """
 
+# ---------- Setup ----------
 app = Flask(__name__)
 
+# https://www.geeksforgeeks.org/python/connect-flask-to-a-database-with-flask-sqlalchemy/
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+
 def save_event_data():
+    # TODO
     pass
 
 
 def save_profile_data():
+    # TODO
     pass
 
 
 def load_event_data():
+    # TODO
     pass
 
 
 def load_profile_data():
+    # TODO
     pass
 
 
 def get_profile(user_id: int) -> Profile:
+    # TODO
     pass
 
 
 def new_profile_id():
+    # TODO
     pass
 
 def get_event(event_id: int) -> Event:
+    # TODO
     pass
 
 
 def new_event_id():
+    # TODO
     pass
 
 @app.route('/update_profile', methods=[])
@@ -57,8 +74,10 @@ def update_profile(user_id: int):
     profile = get_profile(user_id)
 
     if profile:
+        # TODO
         pass
     else:
+        # TODO: error handling
         pass
 
     pass
@@ -73,6 +92,7 @@ def rsvp(user_id: int, event_id: int):
     if profile and event:
         event.add_attendee(profile)
     else:
+        # TODO: error handling
         pass
 
 
@@ -85,6 +105,7 @@ def check_in(user_id: int, event_id: int):
     if profile and event:
         event.check_in_attendee(user_id)
     else:
+        # TODO: error handling
         pass
 
 
@@ -94,7 +115,7 @@ def toggle_user_break(user_id: int):
     # bro, wires, everywhere. the flag for this is in the event class, but you get the user id
     # maybe add a current event attr in Profile?
     # Or loop over profile event list for the first (and theoretically only) active one <- <- <-
-
+    # TODO
     pass
 
 
@@ -105,13 +126,35 @@ def toggle_user_break(user_id: int):
 
 @app.route('/new_event', methods=['POST'])
 def make_event():
-    pass
+    event_info = request.get_json()
+    name = event_info['name']
+    date = event_info['date']
+    location = event_info['location']
+    owner = event_info['owner']
+
+    if name != '' and date != '' and location != '' and owner is not None:
+        event = Event(name=name, date=date, location=location, owner=owner)
+        db.session.add(event)
+        db.session.commit()
+        print(event.id)
+        pass
+    else:
+        # TODO: error handling
+        pass
+
+    return redirect('/')
+
+@app.route('/test')
+def test():
+    t = db.session.get(Event, 7)
+    print(t.__repr__())
+    return t.__repr__()
 
 @app.route('/update_event', methods=[])
 def update_event(event_id: int):
 
     # Q: same q as update_profile, how we getting that data???
-
+    # TODO
     pass
 
 
@@ -123,6 +166,7 @@ def start_event(event_id: int):
     if event:
         event.start_event()
     else:
+        # TODO: error handling
         pass
 
 
@@ -134,13 +178,14 @@ def end_event(event_id: int):
     if event:
         event.end_event()
     else:
+        # TODO: error handling
         pass
 
 
 @app.route('/make_pairs', methods= ["GET"])
 def make_pairs():
 
-    #TODO make better lmao
+    # TODO make better lmao
     event = Event("name", "date", 'location', 1, 1)
 
     lead = Field(Field_Type.Lead_Follow, ["lead", "follow"], True, [1, 0])
@@ -202,5 +247,9 @@ if __name__ == "__main__":
     # TODO: Load events
     # TODO: load profiles
     # app.run(host='0.0.0.0', debug=True)
+
+    with app.app_context():
+        db.create_all()
+
     app.run(debug=True)
 
