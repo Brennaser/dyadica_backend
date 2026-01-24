@@ -6,10 +6,19 @@ version: 11/20/2025
 """
 from Field import Field
 
-class Profile:
+from extensions import db, event_profile_table
 
-    def __init__(self, id: int, name: str, fields: dict):
-        self.id = id
+class Profile(db.Model):
+
+    __tablename__ = 'profiles'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    events = db.relationship("Event",
+                             secondary=event_profile_table,
+                             back_populates='profile')
+
+    def __init__(self, name: str, fields: dict):
         self.name = name
         self.fields = fields
         self.blocked = set()

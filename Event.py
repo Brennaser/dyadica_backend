@@ -11,16 +11,33 @@ import pandas as pd
 from Field import Field
 from Profile import Profile
 
-class Event:
+from extensions import db, event_profile_table
 
-    def __init__(self, name, date, location, owner, id):
+class Event(db.Model):
+
+    __tablename__ = 'events'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(25), unique=False, nullable=False)
+    date = db.Column(db.String(25), unique=False, nullable=False)
+    location = db.Column(db.String(25), unique=False, nullable=False)
+    owner = db.Column(db.Integer, nullable=False)
+
+    attendees = db.relationship("Profile",
+                                secondary=event_profile_table,
+                                back_populates="event")
+    
+    ongoing = db.Column(db.Boolean, nullable=False)
+    pairing = db.Column(db.Boolean, nullable=False)
+
+    def __init__(self, name, date, location, owner):
 
         self.name = name
         self.date = date
         self.location = location
         self.owner = owner
-        self.id = id
 
+        # TODO: rework this
         # Key: Profile.id, Values: {Fields, Attending}
         self.attendees = {}
 
@@ -30,6 +47,7 @@ class Event:
         self.ongoing = False
         self.pairing = False
 
+    # TODO: get these in the database
         self.pair_scores = None
         self.max_pair_scores = None
 
@@ -197,4 +215,7 @@ class Event:
         for a, b in pairs:
             self.pair_scores[b][a] = 0
             self.pair_scores[a][b] = 0
+
+    def __repr__(self):
+        return f"Event Name: {self.name}, {self.id} Owner: {self.owner}"
 
