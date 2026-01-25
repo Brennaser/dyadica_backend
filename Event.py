@@ -25,10 +25,13 @@ class Event(db.Model):
 
     attendees = db.relationship("Profile",
                                 secondary=event_profile_table,
-                                back_populates="event")
+                                back_populates="events")
     
     ongoing = db.Column(db.Boolean, nullable=False)
     pairing = db.Column(db.Boolean, nullable=False)
+
+    pair_scores = db.Column(db.Text, nullable=True)
+    max_pair_scores = db.Column(db.Text, nullable=True)
 
     def __init__(self, name, date, location, owner):
 
@@ -37,19 +40,12 @@ class Event(db.Model):
         self.location = location
         self.owner = owner
 
-        # TODO: rework this
-        # Key: Profile.id, Values: {Fields, Attending}
-        self.attendees = {}
-
         # TODO: Figure this out
+        # Probably somthing like /event_rsvp/{event_id}
         self.access_code = None
 
         self.ongoing = False
         self.pairing = False
-
-    # TODO: get these in the database
-        self.pair_scores = None
-        self.max_pair_scores = None
 
     
     def add_attendee(self, attendee: Profile):
@@ -217,5 +213,5 @@ class Event(db.Model):
             self.pair_scores[a][b] = 0
 
     def __repr__(self):
-        return f"Event Name: {self.name}, {self.id} Owner: {self.owner}"
+        return f"Event Name: {self.name}, {self.id} Owner: {self.owner}\nPair Scores:\n{self.pair_scores}"
 
