@@ -74,6 +74,7 @@ def rsvp():
 
     if profile and event:
         event.attendees.append(profile)
+        db.session.commit()
         # profile.events.append(event)
         # Q: is there more to it?
     else:
@@ -96,6 +97,7 @@ def check_in():
     if profile and event:
         # FIX: check in needs to be reworked
         event.check_in_attendee(user_id)
+        db.session.commit()
     else:
         # TODO: error handling
         pass
@@ -113,6 +115,7 @@ def toggle_user_break():
 
     if profile:
         profile.toggle_break()
+        db.session.commit()
     else:
         # TODO: error handling
         pass
@@ -131,6 +134,7 @@ def block_user():
 
     # FIX: the blocked list is broken in the database
     user_a.block_user(user_b)
+    db.session.commit()
 
 
 @app.route('/new_event', methods=['POST'])
@@ -190,6 +194,7 @@ def start_event():
 
     if event:
         event.start_event()
+        db.session.commit()
     else:
         # TODO: error handling
         pass
@@ -207,6 +212,7 @@ def end_event(event_id: int):
 
     if event:
         event.end_event()
+        db.session.commit()
     else:
         # TODO: error handling
         pass
