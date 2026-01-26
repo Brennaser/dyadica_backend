@@ -49,7 +49,7 @@ class Event(db.Model):
         self.ongoing = False
         self.pairing = False
 
-        # FIX: checked-in and dancing flags are broken
+        # FIX: checked-in flags are broken
 
     
     def add_attendee(self, attendee: Profile):
@@ -145,10 +145,17 @@ class Event(db.Model):
                     self.pair_scores[dancer_b.id][dancer_a.id] = pair_score
 
         # Normalize scores
-        # FIX: when all scores are the same, this replaces them all with NaN
         score_min = self.pair_scores.min().min()
         score_max = self.pair_scores.max().max()
-        self.pair_scores = (self.pair_scores - score_min) / (score_max - score_min)
+
+        if score_max == score_min:
+            # iff all scores are the same, set them all to one
+            self.pair_scores = pd.DataFrame(1, index=self.pair_scores.index, columns=self.pair_scores.columns)
+        else:
+            # else, just normalize scores
+            self.pair_scores = (self.pair_scores - score_min) / (score_max - score_min)
+
+
 
         # Deep Copy of pair_scores to serve as a baseline
         self.max_pair_scores = self.pair_scores.copy()
@@ -170,6 +177,7 @@ class Event(db.Model):
 
 
     # Do users even need to be able to unblock a user during an event???
+    # NOTE: no, not neccessary for this user study
     def unblock_pair(self, dancer_a: int, dancer_b: int):
 
         a_fields = self.attendees[dancer_a]['profile'].fields
