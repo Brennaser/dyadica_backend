@@ -185,10 +185,7 @@ class Event(db.Model):
         self.max_pair_scores[dancer_b][dancer_a] = pair_score
 
 
-    # TODO: refactor for db
     def make_pairs(self):
-
-        # TODO: Only mask out people who are not dancing when making pairs
 
         # Mask out those who are not dancing
         dancing_mask = pd.DataFrame([dancer.dancing for dancer in self.attendees], index=[dancer.id for dancer in self.attendees])
@@ -204,14 +201,13 @@ class Event(db.Model):
         paired = np.full((len(best_pair)), False)
         pairings = []
 
-        # TODO: refactor to attendee_ids
-        names = dancing.index
+        dancer_ids = dancing.index
 
         for dancer_a_idx in sorted_pairs:
             dancer_b_idx = best_pair[dancer_a_idx]
             
             if not paired[dancer_a_idx] and not paired[dancer_b_idx]:
-                pairings.append((names[dancer_a_idx], names[dancer_b_idx]))
+                pairings.append((dancer_ids[dancer_a_idx], dancer_ids[dancer_b_idx]))
                 paired[dancer_a_idx] = True
                 paired[dancer_b_idx] = True
 
