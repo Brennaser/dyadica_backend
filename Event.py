@@ -223,7 +223,7 @@ class Event(db.Model):
 
         # Mask out those who are not dancing
         dancing_mask = pd.DataFrame([dancer.dancing for dancer in self.attendees], index=[dancer.id for dancer in self.attendees])
-        dancing_mask = dancing_mask[dancing_mask].index
+        dancing_mask = dancing_mask[dancing_mask[0]].index
 
         dancing = pair_scores.loc[dancing_mask][dancing_mask]
 

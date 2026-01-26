@@ -209,55 +209,61 @@ def end_event(event_id: int):
 def make_pairs():
 
     # TODO make better lmao
-    event = Event("name", "date", 'location', 1)
-    db.session.add(event)
-    lead = [1, 0]
-    follow = [0, 1]
-    lead_follow = [1 ,1]
+    # event = Event("name", "date", 'location', 1)
+    # db.session.add(event)
+    # lead = [1, 0]
+    # follow = [0, 1]
+    # lead_follow = [1 ,1]
 
-    style = [1, 1]
-    style1 = [1, 0]
+    # style = [1, 1]
+    # style1 = [1, 0]
 
-    pos = [1, 1, 1]
-    pos1 = [0, 1, 0]
+    # pos = [1, 1, 1]
+    # pos1 = [0, 1, 0]
 
-    # TODO: test magnetic fields
-    p = Profile(name="1", fields={"style": style1, "position": pos, "lead/follow": lead_follow})
-    db.session.add(p)
-    p2 = Profile(name="2", fields={"style": style, "position": pos, "lead/follow": follow})
-    db.session.add(p2)
-    p3 = Profile(name="3", fields={"style": style, "position": pos, "lead/follow": lead})
-    db.session.add(p3)
-    p4 = Profile(name="4", fields={"style": style1, "position": pos1, "lead/follow": follow})
-    db.session.add(p4)
+    # # TODO: test magnetic fields
+    # p = Profile(name="1", fields={"style": style1, "position": pos, "lead/follow": lead_follow})
+    # db.session.add(p)
+    # p2 = Profile(name="2", fields={"style": style, "position": pos, "lead/follow": follow})
+    # db.session.add(p2)
+    # p3 = Profile(name="3", fields={"style": style, "position": pos, "lead/follow": lead})
+    # db.session.add(p3)
+    # p4 = Profile(name="4", fields={"style": style1, "position": pos1, "lead/follow": follow})
+    # db.session.add(p4)
 
-    db.session.commit()
+    # db.session.commit()
 
-    event.attendees.append(p)
+    # event.attendees.append(p)
 
-    event.attendees.append(p2)
+    # event.attendees.append(p2)
 
-    event.attendees.append(p3)
+    # event.attendees.append(p3)
 
-    event.attendees.append(p4)
+    # event.attendees.append(p4)
 
-    # NOTE: in liue of checking-in
-    for i in range(1, 5):
-        px = db.session.get(Profile, i)
-        px.toggle_break()
+    # # NOTE: in liue of checking-in
+    # for i in range(1, 5):
+    #     px = db.session.get(Profile, i)
+    #     px.toggle_break()
 
-    event.start_event()
+    # event.start_event()
 
     event = db.session.get(Event, 1)
+    p2 = db.session.get(Profile, 2)
+    p2.toggle_break()
+    db.session.commit()
+    print("*"*20)
     pairs = event.make_pairs()
 
+    print(p2.dancing)
     for _ in range(5):
         print(pairs)
         event.adjust_scores(pairs)
-        # p2.toggle_break()
+        p2.toggle_break()
+        db.session.commit()
         pairs = event.make_pairs()
     print(pairs)
-
+    db.session.commit()
     return jsonify({"pairs": [(int(a), int(b)) for a, b in pairs]})
 
 
