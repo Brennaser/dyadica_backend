@@ -150,15 +150,30 @@ def test():
     print(t.__repr__())
     return t.__repr__()
 
-@app.route('/update_event', methods=[])
-def update_event(event_id: int):
+@app.route('/update_event', methods=['POST'])
+def update_event():
+    event_info = request.get_json()
+    event_id = event_info['event_id']
+    name = event_info['name']
+    date = event_info['date']
+    location = event_info['location']
 
-    # TODO
-    pass
+    if event_id is not None:
+        event = db.session.get(Event, event_id)
+        event.name = name
+        event.date = date
+        event.location = location
+        db.session.commit()
+        pass
+    else:
+        # TODO: error handling
+        pass
+
+    return redirect('/')
 
 
 @app.route('/start_event', methods=['POST'])
-def start_event(event_id: int):
+def start_event():
 
     event_info = request.get_json()
     event_id = event_info['event_id']
