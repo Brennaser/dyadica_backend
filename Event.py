@@ -8,7 +8,6 @@ version: 11/20/2025
 import numpy as np
 import pandas as pd 
 
-from Field import Field
 from Profile import Profile
 
 from extensions import db, event_profile_table
@@ -30,8 +29,11 @@ class Event(db.Model):
     ongoing = db.Column(db.Boolean, nullable=False)
     pairing = db.Column(db.Boolean, nullable=False)
 
-    pair_scores = db.Column(db.Text, nullable=True)
-    max_pair_scores = db.Column(db.Text, nullable=True)
+    # TODO: save these values when they change
+    # NOTE: do this in the main class
+    # FIX: sqlalchemy.exc.StatementError: (builtins.TypeError) Object of type DataFrame is not JSON serializable
+    pair_scores = db.Column(db.JSON, nullable=True)
+    max_pair_scores = db.Column(db.JSON, nullable=True)
 
     def __init__(self, name, date, location, owner):
 
@@ -47,75 +49,103 @@ class Event(db.Model):
         self.ongoing = False
         self.pairing = False
 
+        # FIX: checked-in and dancing flags are broken
+
     
     def add_attendee(self, attendee: Profile):
-        self.attendees[attendee.id] = {"profile": attendee,
-                                       "checked_in": False,
-                                       "dancing": False}
+        self.attendees.append(attendee)
+        # self.attendees[attendee.id] = {"profile": attendee,
+        #                                "checked_in": False,
+        #                                "dancing": False}
 
 
     def check_in_attendee(self, attendee_id: int):
-        self.attendees[attendee_id]["checked_in"] = True
-        self.attendees[attendee_id]['dancing'] = True
+        # TODO: make relavant wth???
+        pass
+        # self.attendees[attendee_id]["checked_in"] = True
+        # self.attendees[attendee_id]['dancing'] = True
 
 
     def toggle_attendee_dancing(self, attendee_id: int):
         self.attendees[attendee_id]['dancing'] = not self.attendees[attendee_id]['dancing']
 
 
-    # TODO: Q: this should probably be static, right?
     def calculate_pair_score(self, a_fields: dict, b_fields: dict):
+
+        # NOTE: fields are hard coded
         pair_score = 0
 
-        for field in a_fields.keys():
-            score = a_fields[field].get_score(b_fields[field])
+        # Check Lead/Follow (Binary Magnetic)
+        a_lead_follow = a_fields["lead/follow"]
+        b_lead_follow = b_fields['lead/follow']
 
-            # if the pair is invaild -> stop evaluating this pair
-            if score == -1:
-                pair_score = np.nan
-                break
-            else:
-                pair_score += score
+        if (a_lead_follow[0] and b_lead_follow[1]) or (a_lead_follow[1] and b_lead_follow[0]):
+            pair_score += 1
+        else:
+            # Invalid pairing
+            return -1
+        
+        # Check Style
+        a_style = a_fields['style']
+        b_style = b_fields['style']
+
+        for i in range(len(a_style)):
+            if a_style[i] == b_style[i]:
+                pair_score += 1
+
+        # Check Position
+        a_pos = a_fields['position']
+        b_pos = b_fields['position']
+
+        for i in range(len(a_pos)):
+            if a_pos[i] == b_pos[i]:
+                pair_score += 1
         
         return pair_score
 
 
     def start_event(self):
 
-        dancers = pd.DataFrame.from_dict(self.attendees, orient="index")
+        dancers = self.attendees
 
-        self.pair_scores = np.full(shape= (dancers.shape[0], dancers.shape[0]),
+        self.pair_scores = np.full(shape=(len(dancers), len(dancers)),
                                    fill_value= np.nan)
         self.pair_scores = pd.DataFrame(self.pair_scores)
 
         # Name columns and rows after attendee_ids
-        self.pair_scores.index = dancers.index
-        self.pair_scores.columns = dancers.index
+        dancer_ids = [dancer.id for dancer in dancers]
+        self.pair_scores.index = dancer_ids
+        self.pair_scores.columns = dancer_ids
 
-        for dancer_a in dancers.index:
+        for dancer_a in dancers:
 
-            a_fields = dancers['profile'][dancer_a].fields
+            a_fields = dancer_a.fields
 
             # drop -> do not try to partner a person with themself
-            for dancer_b in dancers.drop(dancer_a).index:
+            for dancer_b in dancers:
 
+                # Skip if the same attendee
+                if dancer_b.id == dancer_a.id:
+                    continue
+                 
                 # if one dancer has the other blocked, leave pair_score as np.nan
-                if dancer_b in dancers["profile"][dancer_a].blocked or \
-                    dancer_a in dancers['profile'][dancer_b].blocked:
+                if dancer_b in dancer_a.blocked or \
+                    dancer_a in dancer_b.blocked:
                     continue
 
                 # if neither dancer has the other blocked
-                if np.isnan(self.pair_scores[dancer_a][dancer_b]):
+                if np.isnan(self.pair_scores[dancer_a.id][dancer_b.id]):
 
-                    b_fields = dancers['profile'][dancer_b].fields
+                    b_fields = dancer_b.fields
 
                     pair_score = self.calculate_pair_score(a_fields, b_fields)
+
                     
-                    self.pair_scores[dancer_a][dancer_b] = pair_score
-                    self.pair_scores[dancer_b][dancer_a] = pair_score
+                    self.pair_scores[dancer_a.id][dancer_b.id] = pair_score
+                    self.pair_scores[dancer_b.id][dancer_a.id] = pair_score
 
         # Normalize scores
-        # TODO: Fix when all scores are the same, this replaces them all with NaN
+        # FIX: when all scores are the same, this replaces them all with NaN
         score_min = self.pair_scores.min().min()
         score_max = self.pair_scores.max().max()
         self.pair_scores = (self.pair_scores - score_min) / (score_max - score_min)
@@ -155,13 +185,14 @@ class Event(db.Model):
         self.max_pair_scores[dancer_b][dancer_a] = pair_score
 
 
+    # TODO: refactor for db
     def make_pairs(self):
 
         # TODO: Only mask out people who are not dancing when making pairs
 
         # Mask out those who are not dancing
-        dancing_mask = pd.DataFrame.from_dict(self.attendees, orient="index")
-        dancing_mask = dancing_mask[dancing_mask['dancing']].index
+        dancing_mask = pd.DataFrame([dancer.dancing for dancer in self.attendees], index=[dancer.id for dancer in self.attendees])
+        dancing_mask = dancing_mask[dancing_mask].index
 
         dancing = self.pair_scores.loc[dancing_mask][dancing_mask]
 
@@ -211,6 +242,7 @@ class Event(db.Model):
         for a, b in pairs:
             self.pair_scores[b][a] = 0
             self.pair_scores[a][b] = 0
+
 
     def __repr__(self):
         return f"Event Name: {self.name}, {self.id} Owner: {self.owner}\nPair Scores:\n{self.pair_scores}"
