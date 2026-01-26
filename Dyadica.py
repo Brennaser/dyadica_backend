@@ -213,8 +213,22 @@ def end_event(event_id: int):
 
     return redirect('/')
 
-@app.route('/make_pairs', methods= ["GET"])
+
+@app.route('/make_pairs', methods=['POST'])
 def make_pairs():
+
+    request_info = request.get_json()
+    event_id = request_info['event_id']
+
+    event = db.session.get(Event, event_id)
+    pairs = event.make_pairs()
+    event.adjust_scores(pairs)
+
+    return jsonify({"pairs": [(int(a), int(b)) for a, b in pairs]})
+
+
+@app.route('/test_make_pairs', methods= ["GET"])
+def test_make_pairs():
 
     # TODO make better lmao
     # event = Event("name", "date", 'location', 1)
