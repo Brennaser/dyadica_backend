@@ -21,6 +21,7 @@ class Field:
 
     def get_score(self, other: Field):
 
+        # FIX: this is just completely wrong
         if self.name is other.name:
             score = 0 
 

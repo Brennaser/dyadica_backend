@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request, redirect
 
 from extensions import db
 
-from Field import Field, Field_Type
 from Event import Event
 from Profile import Profile
 
@@ -23,100 +22,102 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-def save_event_data():
-    # TODO
-    pass
+
+@app.route('/new_profile', methods=['POST'])
+def new_profile():
+    profile_info = request.get_json()
+    name = profile_info['name']
+    fields = profile_info['fields']
+
+    if name != '' and fields:
+        profile = Profile(name, fields)
+        db.session.add(profile)
+        db.session.commit()
+        # TODO: send back user id
+    else:
+        # TODO: error handling
+        pass
+
+    return redirect('/')
 
 
-def save_profile_data():
-    # TODO
-    pass
-
-
-def load_event_data():
-    # TODO
-    pass
-
-
-def load_profile_data():
-    # TODO
-    pass
-
-
-def get_profile(user_id: int) -> Profile:
-    # TODO
-    pass
-
-
-def new_profile_id():
-    # TODO
-    pass
-
-def get_event(event_id: int) -> Event:
-    # TODO
-    pass
-
-
-def new_event_id():
-    # TODO
-    pass
-
-@app.route('/update_profile', methods=[])
+@app.route('/update_profile', methods=['POST'])
 def update_profile(user_id: int):
 
-    # Q: How is info being passed? what format???
-    # Q: how to identify and make new profiles??? or i guess know when to allocate a new user id
-    # you plan on using local (phone storge) to keep the id linked to the device
-    # if that local data does not exist, make a new proofile
-    # does introduc the issue of how can users log in on other devices, but ya know what?
-    # it'll work for a user study
+    profile_info = request.get_json()
+    user_id = profile_info['id']
+    name = profile_info['name']
+    fields = profile_info['fields']
 
-    profile = get_profile(user_id)
+    profile = db.session.get(Profile, user_id)
 
     if profile:
-        # TODO
-        pass
+        profile.update_name(name)
+        profile.update_fields(fields)
+        db.session.commit()
     else:
         # TODO: error handling
         pass
 
-    pass
+    return redirect('/')
 
 
-@app.route('/rsvp', methods=[])
-def rsvp(user_id: int, event_id: int):
+@app.route('/rsvp', methods=['POST'])
+def rsvp():
 
-    profile = get_profile(user_id)
-    event = get_event(event_id)
+    request_info = request.get_json()
+    user_id = request_info['user_id']
+    event_id = request_info['event_id']
+
+    profile = db.session.get(Profile, user_id)
+    event = db.session.get(Event, event_id)
 
     if profile and event:
-        event.add_attendee(profile)
+        event.attendees.append(profile)
+        # profile.events.append(event)
+        # Q: is there more to it?
     else:
         # TODO: error handling
         pass
-
-
-@app.route('/check_in', methods=[])
-def check_in(user_id: int, event_id: int):
     
-    profile = get_profile(user_id)
-    event = get_event(event_id)
+    return redirect('/')
+
+
+@app.route('/check_in', methods=['POST'])
+def check_in():
+    
+    request_info = request.get_json()
+    user_id = request_info['user_id']
+    event_id = request_info['event_id']
+
+    profile = db.session.get(Profile, user_id)
+    event = db.session.get(Event, event_id)
 
     if profile and event:
+        # FIX: check in needs to be reworked
         event.check_in_attendee(user_id)
     else:
         # TODO: error handling
         pass
 
+    return redirect('/')
+
 
 @app.route('/toggle_user_break', methods=[])
-def toggle_user_break(user_id: int):
+def toggle_user_break():
 
-    # bro, wires, everywhere. the flag for this is in the event class, but you get the user id
-    # maybe add a current event attr in Profile?
-    # Or loop over profile event list for the first (and theoretically only) active one <- <- <-
-    # TODO
-    pass
+    request_info = request.get_json()
+    user_id = request_info['user_id']
+
+    profile = db.session.get(Profile, user_id)
+
+    if profile:
+        profile.toggle_break()
+    else:
+        # TODO: error handling
+        pass
+
+    return redirect('/')
 
 
 # @app.route('/block_user', methods=[])
@@ -136,7 +137,6 @@ def make_event():
         event = Event(name=name, date=date, location=location, owner=owner)
         db.session.add(event)
         db.session.commit()
-        print(event.id)
         pass
     else:
         # TODO: error handling
@@ -146,22 +146,24 @@ def make_event():
 
 @app.route('/test')
 def test():
-    t = db.session.get(Event, 7)
+    t = db.session.get(Profile, 1)
     print(t.__repr__())
     return t.__repr__()
 
 @app.route('/update_event', methods=[])
 def update_event(event_id: int):
 
-    # Q: same q as update_profile, how we getting that data???
     # TODO
     pass
 
 
-@app.route('/start_event', methods=[])
+@app.route('/start_event', methods=['POST'])
 def start_event(event_id: int):
 
-    event = get_event(event_id)
+    event_info = request.get_json()
+    event_id = event_info['event_id']
+
+    event = db.session.get(Event, event_id)
 
     if event:
         event.start_event()
@@ -169,11 +171,16 @@ def start_event(event_id: int):
         # TODO: error handling
         pass
 
+    return redirect('/')
+
 
 @app.route('/end_event', methods=[])
 def end_event(event_id: int):
-    
-    event = get_event(event_id)
+
+    event_info = request.get_json()
+    event_id = event_info['event_id']
+
+    event = db.session.get(Event, event_id)
 
     if event:
         event.end_event()
@@ -181,55 +188,62 @@ def end_event(event_id: int):
         # TODO: error handling
         pass
 
+    return redirect('/')
 
 @app.route('/make_pairs', methods= ["GET"])
 def make_pairs():
 
     # TODO make better lmao
-    event = Event("name", "date", 'location', 1, 1)
+    event = Event("name", "date", 'location', 1)
+    db.session.add(event)
+    lead = [1, 0]
+    follow = [0, 1]
+    lead_follow = [1 ,1]
 
-    lead = Field(Field_Type.Lead_Follow, ["lead", "follow"], True, [1, 0])
-    follow = Field(Field_Type.Lead_Follow, ["lead", "follow"], True, [0, 1])
-    lead_follow = Field(Field_Type.Lead_Follow, ["lead", "follow"], True, [1 ,1])
+    style = [1, 1]
+    style1 = [1, 0]
 
-    style = Field(Field_Type.Style, ["lindy", "westie"], False, [1, 1])
-    style1 = Field(Field_Type.Style, ["lindy", "westie"], False, [1, 0])
-
-    pos = Field(Field_Type.Position, ['open', 'closed', 'close embrace'], False, [1, 1, 1])
-    pos1 = Field(Field_Type.Position, ['open', 'closed', 'close embrace'], False, [0, 1, 0])
+    pos = [1, 1, 1]
+    pos1 = [0, 1, 0]
 
     # TODO: test magnetic fields
-    p = Profile(1, "1", {"style": style1, "position": pos, "lead\follow": lead_follow})
-    p.add_event(1)
-    p2 = Profile(2, "2", {"style": style, "position": pos, "lead\follow": follow})
-    p2.add_event(1)
-    p3 = Profile(3, "3", {"style": style, "position": pos, "lead\follow": lead})
-    p3.add_event(1)
-    p4 = Profile(4, "4", {"style": style1, "position": pos1, "lead\follow": follow})
-    p4.add_event(1)
+    p = Profile(name="1", fields={"style": style1, "position": pos, "lead/follow": lead_follow})
+    db.session.add(p)
+    p2 = Profile(name="2", fields={"style": style, "position": pos, "lead/follow": follow})
+    db.session.add(p2)
+    p3 = Profile(name="3", fields={"style": style, "position": pos, "lead/follow": lead})
+    db.session.add(p3)
+    p4 = Profile(name="4", fields={"style": style1, "position": pos1, "lead/follow": follow})
+    db.session.add(p4)
 
+    db.session.commit()
 
-    event.add_attendee(p)
-    event.check_in_attendee(1)
+    event.attendees.append(p)
 
-    event.add_attendee(p2)
-    event.check_in_attendee(2)
+    event.attendees.append(p2)
 
-    event.add_attendee(p3)
-    event.check_in_attendee(3)
+    event.attendees.append(p3)
 
-    event.add_attendee(p4)
-    event.check_in_attendee(4)
+    event.attendees.append(p4)
+
+    # NOTE: in liue of checking-in
+    for i in range(1, 5):
+        px = db.session.get(Profile, i)
+        px.toggle_break()
 
     event.start_event()
 
-
+    event = db.session.get(Event, 1)
     pairs = event.make_pairs()
 
+    for _ in range(5):
+        print(pairs)
+        event.adjust_scores(pairs)
+        # p2.toggle_break()
+        pairs = event.make_pairs()
+    print(pairs)
 
-    event.adjust_scores(pairs)
-
-    return jsonify({"pairs": int(pairs[0][0])})
+    return jsonify({"pairs": [(int(a), int(b)) for a, b in pairs]})
 
 
 # TODO: figure out the logistics on this
@@ -244,8 +258,6 @@ def accept_decline():
 
 
 if __name__ == "__main__":
-    # TODO: Load events
-    # TODO: load profiles
     # app.run(host='0.0.0.0', debug=True)
 
     with app.app_context():
@@ -253,3 +265,5 @@ if __name__ == "__main__":
 
     app.run(debug=True)
 
+    # Save all changes made
+    db.session.commit()
