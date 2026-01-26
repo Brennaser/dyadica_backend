@@ -7,6 +7,7 @@ version: 11/20/2025
 # ---------- Imports ----------
 import numpy as np
 import pandas as pd 
+from io import StringIO
 
 from Profile import Profile
 
@@ -32,8 +33,8 @@ class Event(db.Model):
     # TODO: save these values when they change
     # NOTE: do this in the main class
     # FIX: sqlalchemy.exc.StatementError: (builtins.TypeError) Object of type DataFrame is not JSON serializable
-    pair_scores = db.Column(db.JSON, nullable=True)
-    max_pair_scores = db.Column(db.JSON, nullable=True)
+    pair_scores = db.Column(db.JSON, nullable=False)
+    max_pair_scores = db.Column(db.JSON, nullable=False)
 
     def __init__(self, name, date, location, owner):
 
@@ -49,7 +50,18 @@ class Event(db.Model):
         self.ongoing = False
         self.pairing = False
 
+        self.pair_scores = ''
+        self.max_pair_scores = ''
+
         # FIX: checked-in flags are broken
+
+    def scores_to_json(self, pair_scores, max_pair_scores):
+        self.pair_scores = pair_scores.to_json()
+        self.max_pair_scores = max_pair_scores.to_json()
+    
+
+    def scores_to_df(self):
+        return pd.read_json(StringIO(self.pair_scores)), pd.read_json(StringIO(self.max_pair_scores))
 
     
     def add_attendee(self, attendee: Profile):
@@ -108,14 +120,14 @@ class Event(db.Model):
 
         dancers = self.attendees
 
-        self.pair_scores = np.full(shape=(len(dancers), len(dancers)),
+        pair_scores = np.full(shape=(len(dancers), len(dancers)),
                                    fill_value= np.nan)
-        self.pair_scores = pd.DataFrame(self.pair_scores)
+        pair_scores = pd.DataFrame(pair_scores)
 
         # Name columns and rows after attendee_ids
         dancer_ids = [dancer.id for dancer in dancers]
-        self.pair_scores.index = dancer_ids
-        self.pair_scores.columns = dancer_ids
+        pair_scores.index = dancer_ids
+        pair_scores.columns = dancer_ids
 
         for dancer_a in dancers:
 
@@ -127,39 +139,41 @@ class Event(db.Model):
                 # Skip if the same attendee
                 if dancer_b.id == dancer_a.id:
                     continue
-                 
+                
+                # FIX: blocked is null
                 # if one dancer has the other blocked, leave pair_score as np.nan
-                if dancer_b in dancer_a.blocked or \
-                    dancer_a in dancer_b.blocked:
-                    continue
+                # if dancer_b in dancer_a.blocked or \
+                #     dancer_a in dancer_b.blocked:
+                #     continue
 
                 # if neither dancer has the other blocked
-                if np.isnan(self.pair_scores[dancer_a.id][dancer_b.id]):
+                if np.isnan(pair_scores[dancer_a.id][dancer_b.id]):
 
                     b_fields = dancer_b.fields
 
                     pair_score = self.calculate_pair_score(a_fields, b_fields)
 
                     
-                    self.pair_scores[dancer_a.id][dancer_b.id] = pair_score
-                    self.pair_scores[dancer_b.id][dancer_a.id] = pair_score
+                    pair_scores[dancer_a.id][dancer_b.id] = pair_score
+                    pair_scores[dancer_b.id][dancer_a.id] = pair_score
 
         # Normalize scores
-        score_min = self.pair_scores.min().min()
-        score_max = self.pair_scores.max().max()
+        score_min = pair_scores.min().min()
+        score_max = pair_scores.max().max()
 
         if score_max == score_min:
             # iff all scores are the same, set them all to one
-            self.pair_scores = pd.DataFrame(1, index=self.pair_scores.index, columns=self.pair_scores.columns)
+            pair_scores = pd.DataFrame(1, index=pair_scores.index, columns=pair_scores.columns)
         else:
             # else, just normalize scores
-            self.pair_scores = (self.pair_scores - score_min) / (score_max - score_min)
+            pair_scores = (pair_scores - score_min) / (score_max - score_min)
 
 
 
         # Deep Copy of pair_scores to serve as a baseline
-        self.max_pair_scores = self.pair_scores.copy()
+        max_pair_scores = pair_scores.copy()     
 
+        self.scores_to_json()
         # Tell Dyadica to start checking this event
         self.ongoing = True
 
@@ -169,11 +183,16 @@ class Event(db.Model):
 
 
     def new_blocked_pair(self, dancer_a: int, dancer_b: int):
-        self.pair_scores[dancer_a][dancer_b] = np.nan
-        self.pair_scores[dancer_b][dancer_a] = np.nan
 
-        self.max_pair_scores[dancer_a][dancer_b] = np.nan
-        self.max_pair_scores[dancer_b][dancer_a] = np.nan
+        pair_scores, max_pair_scores = self.scores_to_df()
+
+        pair_scores[dancer_a][dancer_b] = np.nan
+        pair_scores[dancer_b][dancer_a] = np.nan
+
+        max_pair_scores[dancer_a][dancer_b] = np.nan
+        max_pair_scores[dancer_b][dancer_a] = np.nan
+
+        self.scores_to_json(pair_scores, max_pair_scores)
 
 
     # Do users even need to be able to unblock a user during an event???
@@ -186,20 +205,27 @@ class Event(db.Model):
         pair_score = self.calculate_pair_score(a_fields, b_fields)
         
         # FIX: Not normalized!!!!!
-        self.pair_scores[dancer_a][dancer_b] = pair_score
-        self.pair_scores[dancer_b][dancer_a] = pair_score
 
-        self.max_pair_scores[dancer_a][dancer_b] = pair_score
-        self.max_pair_scores[dancer_b][dancer_a] = pair_score
+        pair_scores, max_pair_scores = self.scores_to_df()
+
+        pair_scores[dancer_a][dancer_b] = pair_score
+        pair_scores[dancer_b][dancer_a] = pair_score
+
+        max_pair_scores[dancer_a][dancer_b] = pair_score
+        max_pair_scores[dancer_b][dancer_a] = pair_score
+
+        self.scores_to_json(pair_scores, max_pair_scores)
 
 
     def make_pairs(self):
+
+        pair_scores, _ = self.scores_to_df()
 
         # Mask out those who are not dancing
         dancing_mask = pd.DataFrame([dancer.dancing for dancer in self.attendees], index=[dancer.id for dancer in self.attendees])
         dancing_mask = dancing_mask[dancing_mask].index
 
-        dancing = self.pair_scores.loc[dancing_mask][dancing_mask]
+        dancing = pair_scores.loc[dancing_mask][dancing_mask]
 
 
         best_pair = np.nanargmax(dancing, axis=1)
@@ -237,15 +263,19 @@ class Event(db.Model):
 
     def adjust_scores(self, pairs):
 
-        for row in self.pair_scores.index:
-            for col in self.pair_scores.columns:
+        pair_scores, max_pair_scores = self.scores_to_df()
+
+        for row in pair_scores.index:
+            for col in pair_scores.columns:
                 # <= so that even the lowest scoring possible pair has a chance
-                if self.pair_scores[row][col] <= self.max_pair_scores[row][col]:
-                    self.pair_scores[row][col] += 0.1
+                if pair_scores[row][col] <= max_pair_scores[row][col]:
+                    pair_scores[row][col] += 0.1
         
         for a, b in pairs:
-            self.pair_scores[b][a] = 0
-            self.pair_scores[a][b] = 0
+            pair_scores[b][a] = 0
+            pair_scores[a][b] = 0
+
+        self.scores_to_json(pair_scores, max_pair_scores)
 
 
     def __repr__(self):
