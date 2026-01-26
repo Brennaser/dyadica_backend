@@ -21,6 +21,8 @@ class Profile(db.Model):
     name = db.Column(db.String(25), unique=False, nullable=False)
     fields = db.Column(db.JSON, unique=False, nullable=False)
     dancing = db.Column(db.Boolean, unique=False, nullable=False)
+    # TODO: make this one-many relationship
+    # blocked = db.relationship("Profile", ForeignKey("profiles.id"))
 
     def __init__(self, name: str, fields: dict):
         self.name = name
@@ -38,8 +40,8 @@ class Profile(db.Model):
         self.fields = new_fields
 
 
-    def block_user(self, other_id: int):
-        self.blocked.append(other_id)
+    def block_user(self, other: Profile):
+        self.blocked.append(other)
 
 
     def unblock_user(self, other_id: int):

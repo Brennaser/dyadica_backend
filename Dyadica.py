@@ -120,9 +120,17 @@ def toggle_user_break():
     return redirect('/')
 
 
-# @app.route('/block_user', methods=[])
-# def block_user(user_id_a: int, user_id_b: int):
-#     pass
+@app.route('/block_user', methods=['POST'])
+def block_user():
+    request_info = request.get_json()
+    user_a_id = request_info['user_a_id']
+    user_b_id = request_info['user_b_id']
+
+    user_a = db.session.get(Profile, user_a_id)
+    user_b = db.session.get(Profile, user_b_id)
+
+    # FIX: the blocked list is broken in the database
+    user_a.block_user(user_b)
 
 
 @app.route('/new_event', methods=['POST'])
