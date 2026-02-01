@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request, redirect
+from flask import Flask, jsonify, request, redirect, render_template
+from flask_socketio import SocketIO, send, emit
 
 from extensions import db
 
@@ -21,6 +22,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+
+app.config['SECRET_KEY'] = 'vnajdsf;adjaodlkd;jkavds'
+
+socket = SocketIO(app)
 
 
 @app.route('/new_profile', methods=['POST'])
@@ -156,7 +161,7 @@ def make_event():
 
     return redirect('/')
 
-@app.route('/test')
+# @app.route('/test')
 def test():
     t = db.session.get(Profile, 1)
     print(t.__repr__())
@@ -223,6 +228,7 @@ def end_event(event_id: int):
 @app.route('/make_pairs', methods=['POST'])
 def make_pairs():
 
+    request_info = request.get_json()
     request_info = request.get_json()
     event_id = request_info['event_id']
 
@@ -304,6 +310,25 @@ def accept_decline():
 
 # Q: how does starting a dance fit with accept/decline??? esspecially if you don't get the location detection going
 # is it really needed?
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@socket.on('connect')
+def test():
+    print("Connected")
+
+@socket.on("my_event")
+def event(data):
+    socket.send(data, callback=lambda: print("it happened!"))
+
+
+# Handle user messages
+@socket.on('message')
+def handle_message(data):
+    print(data)
+    socket.emit("message", f"You said: {data}")  # Send to everyone
 
 
 if __name__ == "__main__":
@@ -312,7 +337,8 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    app.run(debug=True)
+    # app.run(debug=True)
+    socket.run(app, debug=True)
 
     # Save all changes made
     db.session.commit()
