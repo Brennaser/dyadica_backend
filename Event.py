@@ -91,7 +91,7 @@ class Event(db.Model):
         a_lead_follow = a_fields["lead/follow"]
         b_lead_follow = b_fields['lead/follow']
 
-        if (a_lead_follow[0] and b_lead_follow[1]) or (a_lead_follow[1] and b_lead_follow[0]):
+        if (a_lead_follow["Lead"] and b_lead_follow["Follow"]) or (a_lead_follow["Follow"] and b_lead_follow["Lead"]):
             pair_score += 1
         else:
             # Invalid pairing
@@ -101,7 +101,7 @@ class Event(db.Model):
         a_style = a_fields['style']
         b_style = b_fields['style']
 
-        for i in range(len(a_style)):
+        for i in a_style.keys():
             if a_style[i] == b_style[i]:
                 pair_score += 1
 
@@ -109,7 +109,7 @@ class Event(db.Model):
         a_pos = a_fields['position']
         b_pos = b_fields['position']
 
-        for i in range(len(a_pos)):
+        for i in a_pos.keys():
             if a_pos[i] == b_pos[i]:
                 pair_score += 1
         
@@ -161,6 +161,7 @@ class Event(db.Model):
         score_min = pair_scores.min().min()
         score_max = pair_scores.max().max()
 
+        # FIX: identidy diagonal is getting set to 1 as well
         if score_max == score_min:
             # iff all scores are the same, set them all to one
             pair_scores = pd.DataFrame(1, index=pair_scores.index, columns=pair_scores.columns)
@@ -173,7 +174,7 @@ class Event(db.Model):
         # Deep Copy of pair_scores to serve as a baseline
         max_pair_scores = pair_scores.copy()     
 
-        self.scores_to_json()
+        self.scores_to_json(pair_scores, max_pair_scores)
         # Tell Dyadica to start checking this event
         self.ongoing = True
 
@@ -227,7 +228,7 @@ class Event(db.Model):
 
         dancing = pair_scores.loc[dancing_mask][dancing_mask]
 
-
+        print(dancing)
         best_pair = np.nanargmax(dancing, axis=1)
         best_weights = [dancing[row].iloc[best_pair[i]] for i, row in enumerate(dancing)]
         sorted_pairs = np.argsort(best_weights)[::-1]
@@ -279,5 +280,5 @@ class Event(db.Model):
 
 
     def __repr__(self):
-        return f"Event Name: {self.name}, {self.id} Owner: {self.owner}\nPair Scores:\n{self.pair_scores}"
+        return f"Event Name: {self.name}, Date: {self.date} {self.id} Owner: {self.owner}\nPair Scores:\n{self.pair_scores}"
 
