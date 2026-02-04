@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, redirect, render_template
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO
 
 from extensions import db
 
@@ -27,30 +27,14 @@ app.config['SECRET_KEY'] = 'vnajdsf;adjaodlkd;jkavds'
 
 socket = SocketIO(app)
 
-
-@app.route('/new_profile', methods=['POST'])
-def new_profile():
-    profile_info = request.get_json()
-    name = profile_info['name']
-    fields = profile_info['fields']
-
-    if name != '' and fields:
-        profile = Profile(name, fields)
-        db.session.add(profile)
-        db.session.commit()
-        # TODO: send back user id
-    else:
-        # TODO: error handling
-        pass
-
-    return redirect('/')
+active_users = {}
 
 
-@app.route('/update_profile', methods=['POST'])
-def update_profile(user_id: int):
+@socket.on('update_profile')
+def update_profile(profile_info):
 
-    profile_info = request.get_json()
-    user_id = profile_info['id']
+    user_id = profile_info['user_id']
+    print(user_id)
     name = profile_info['name']
     fields = profile_info['fields']
 
@@ -67,6 +51,7 @@ def update_profile(user_id: int):
     return redirect('/')
 
 
+# TODO: actually do this on client end
 @app.route('/rsvp', methods=['POST'])
 def rsvp():
 
@@ -110,6 +95,8 @@ def check_in():
     return redirect('/')
 
 
+# TODO: Rework with socket
+# FIX: rework with the split app model
 @app.route('/toggle_user_break', methods=[])
 def toggle_user_break():
 
@@ -127,7 +114,8 @@ def toggle_user_break():
 
     return redirect('/')
 
-
+# TODO?: rework with sockets
+# FIX?: rework with the split app model
 @app.route('/block_user', methods=['POST'])
 def block_user():
     request_info = request.get_json()
@@ -161,11 +149,30 @@ def make_event():
 
     return redirect('/')
 
-# @app.route('/test')
+@app.route('/test')
 def test():
-    t = db.session.get(Profile, 1)
+    t = db.session.query(Event).all()
     print(t.__repr__())
-    return t.__repr__()
+    return [temp.__repr__() for temp in t]
+
+
+@socket.on('get_events')
+def get_events():
+    events = db.session.query(Event).all()
+
+    serialize = lambda event: {"event_id": event.id,
+                               "event_owner": event.owner,
+                               "event_name": event.name,
+                               "event_location": event.location,
+                               "event_date": event.date,
+                               }
+
+    # [print(serialize(event)) for event in events]
+
+    socket.emit('get_events',
+                {"events": [serialize(event) for event in events]},
+                to=request.sid)
+
 
 @app.route('/update_event', methods=['POST'])
 def update_event():
@@ -228,77 +235,47 @@ def end_event(event_id: int):
 @app.route('/make_pairs', methods=['POST'])
 def make_pairs():
 
-    request_info = request.get_json()
+    people = db.session.query(Profile).all()
+
     request_info = request.get_json()
     event_id = request_info['event_id']
 
     event = db.session.get(Event, event_id)
-    pairs = event.make_pairs()
-    event.adjust_scores(pairs)
 
-    return jsonify({"pairs": [(int(a), int(b)) for a, b in pairs]})
-
-
-@app.route('/test_make_pairs', methods= ["GET"])
-def test_make_pairs():
-
-    # TODO make better lmao
-    # event = Event("name", "date", 'location', 1)
-    # db.session.add(event)
-    # lead = [1, 0]
-    # follow = [0, 1]
-    # lead_follow = [1 ,1]
-
-    # style = [1, 1]
-    # style1 = [1, 0]
-
-    # pos = [1, 1, 1]
-    # pos1 = [0, 1, 0]
-
-    # # TODO: test magnetic fields
-    # p = Profile(name="1", fields={"style": style1, "position": pos, "lead/follow": lead_follow})
-    # db.session.add(p)
-    # p2 = Profile(name="2", fields={"style": style, "position": pos, "lead/follow": follow})
-    # db.session.add(p2)
-    # p3 = Profile(name="3", fields={"style": style, "position": pos, "lead/follow": lead})
-    # db.session.add(p3)
-    # p4 = Profile(name="4", fields={"style": style1, "position": pos1, "lead/follow": follow})
-    # db.session.add(p4)
-
+    # ----- Test stuff -----
+    # for p in people:
+    #     event.add_attendee(p)
+    #     # p.toggle_break()
     # db.session.commit()
 
-    # event.attendees.append(p)
+    for p in people:
+        p.dancing = True
 
-    # event.attendees.append(p2)
+    print(event.attendees)
+    event.start_event()
 
-    # event.attendees.append(p3)
-
-    # event.attendees.append(p4)
-
-    # # NOTE: in liue of checking-in
-    # for i in range(1, 5):
-    #     px = db.session.get(Profile, i)
-    #     px.toggle_break()
-
-    # event.start_event()
-
-    event = db.session.get(Event, 1)
-    p2 = db.session.get(Profile, 2)
-    p2.toggle_break()
-    db.session.commit()
-    print("*"*20)
     pairs = event.make_pairs()
-
-    print(p2.dancing)
-    for _ in range(5):
-        print(pairs)
-        event.adjust_scores(pairs)
-        p2.toggle_break()
-        db.session.commit()
-        pairs = event.make_pairs()
-    print(pairs)
+    event.adjust_scores(pairs)
     db.session.commit()
-    return jsonify({"pairs": [(int(a), int(b)) for a, b in pairs]})
+
+    for a, b in pairs:
+        a_sid = active_users[int(a)]
+        b_sid = active_users[int(b)]
+
+        profile_a = db.session.get(Profile, int(a))
+        profile_b = db.session.get(Profile, int(b))
+
+        socket.emit('send_pair',
+                {"pair": f"a: {profile_b.name}"},
+                    to=a_sid
+                    )
+        
+        socket.emit('send_pair',
+                    {'pair': profile_a.name},
+                    to=b_sid
+                    )
+
+    return redirect('/')
 
 
 # TODO: figure out the logistics on this
@@ -310,34 +287,56 @@ def accept_decline():
 
 # Q: how does starting a dance fit with accept/decline??? esspecially if you don't get the location detection going
 # is it really needed?
-@app.route('/')
-def index():
-    return render_template('index.html')
+
+@socket.on('user_id')
+def user_id(data):
+
+    profile = db.session.get(Profile, data['user_id'])
+
+    if profile:
+        active_users[profile.id] = request.sid
+        socket.emit('profile_data',
+                    {'user_id': profile.id,
+                    'name': profile.name,
+                    'fields': profile.fields},
+                    to=request.sid)
+    else:
+        default_fields = {"lead/follow": {'Lead': False, 'Follow': False},
+                          "style": {'Lindy Hop': False, "Westie": False, "Balboa": False},
+                          "position": {"Open": False, "Closed": False, "Close Embrace": False}}
+
+        profile = Profile('', default_fields)
+        db.session.add(profile)
+        db.session.commit()
+
+        socket.emit('profile_data',
+                    {'user_id': profile.id,
+                    'name': profile.name,
+                    'fields': profile.fields},
+                    to=request.sid)
+
+        active_users[profile.id] = request.sid
+        print(profile)
+        print(f'Made new Profile: {profile.id}')
 
 
 @socket.on('connect')
-def test():
-    print("Connected")
-
-@socket.on("my_event")
-def event(data):
-    socket.send(data, callback=lambda: print("it happened!"))
+def connect():
+    print(f"Connected on Socket: {request.sid}")
 
 
-# Handle user messages
-@socket.on('message')
-def handle_message(data):
-    print(data)
-    socket.emit("message", f"You said: {data}")  # Send to everyone
+@socket.on('disconnect')
+def disconnect():
+    active_users.pop(request.sid)
+    print(f'Disconnected {request.sid}')
 
 
+# TODO: link sources
 if __name__ == "__main__":
-    # app.run(host='0.0.0.0', debug=True)
 
     with app.app_context():
         db.create_all()
 
-    # app.run(debug=True)
     socket.run(app, debug=True)
 
     # Save all changes made
