@@ -95,19 +95,27 @@ def check_in():
     return redirect('/')
 
 
-# TODO: Rework with socket
-# FIX: rework with the split app model
-@app.route('/toggle_user_break', methods=[])
+@socket.on("toggle_user_break")
 def toggle_user_break():
 
-    request_info = request.get_json()
-    user_id = request_info['user_id']
+    
+    user_id = -1
+
+    for uid in active_users.keys():
+        if active_users[uid] == request.sid:
+            user_id = uid
+
+    if user_id == -1:
+        return redirect('/')
 
     profile = db.session.get(Profile, user_id)
 
     if profile:
         profile.toggle_break()
         db.session.commit()
+        socket.emit("toggle_user_break",
+                    {"dancing": profile.dancing},
+                    to=request.sid)
     else:
         # TODO: error handling
         pass
@@ -151,7 +159,7 @@ def make_event():
 
 @app.route('/test')
 def test():
-    t = db.session.query(Event).all()
+    t = db.session.query(Profile).all()
     print(t.__repr__())
     return [temp.__repr__() for temp in t]
 
@@ -252,11 +260,16 @@ def make_pairs():
         p.dancing = True
 
     print(event.attendees)
-    event.start_event()
+    # event.start_event()
 
     pairs = event.make_pairs()
     event.adjust_scores(pairs)
     db.session.commit()
+
+    format_profile = lambda p: {"user_id": p.id,
+                                "name": p.name,
+                                "fields": p.fields,
+                                "dancing": p.dancing}
 
     for a, b in pairs:
         a_sid = active_users[int(a)]
@@ -266,12 +279,12 @@ def make_pairs():
         profile_b = db.session.get(Profile, int(b))
 
         socket.emit('send_pair',
-                {"pair": f"a: {profile_b.name}"},
+                {"pair": format_profile(profile_b)},
                     to=a_sid
                     )
         
         socket.emit('send_pair',
-                    {'pair': profile_a.name},
+                    {'pair': format_profile(profile_a)},
                     to=b_sid
                     )
 
