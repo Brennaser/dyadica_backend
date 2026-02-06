@@ -251,17 +251,8 @@ def make_pairs():
 
     event = db.session.get(Event, event_id)
 
-    # ----- Test stuff -----
-    # for p in people:
-    #     event.add_attendee(p)
-    #     # p.toggle_break()
-    # db.session.commit()
-
-    for p in people:
-        p.dancing = True
-
-    print(event.attendees)
-    # event.start_event()
+    if len(event.pair_scores) == 0:
+        event.start_event()
 
     pairs = event.make_pairs()
     event.adjust_scores(pairs)
