@@ -67,7 +67,6 @@ def rsvp(data):
         db.session.commit()
         # profile.events.append(event)
         print(f"RSVPed User {user_id} for Event {event_id}")
-        # Q: is there more to it?
     else:
         # TODO: error handling
         pass
@@ -281,11 +280,8 @@ def make_pairs():
     return redirect('/')
 
 
-# TODO: figure out the logistics on this
-# @app.route()
 @socket.on("decline")
 def decline(data):
-    # Q: What happens on decline? Repaired? just not paired?
     pair_id = data['pair_id']
     pair_sid = active_users[pair_id]
 
@@ -294,9 +290,6 @@ def decline(data):
     
     print("Pairing Declined")
 
-
-# Q: how does starting a dance fit with accept/decline??? esspecially if you don't get the location detection going
-# is it really needed?
 
 @socket.on('user_id')
 def user_id(data):
