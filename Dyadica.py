@@ -51,21 +51,22 @@ def update_profile(profile_info):
     return redirect('/')
 
 
-# TODO: actually do this on client end
-@app.route('/rsvp', methods=['POST'])
-def rsvp():
+@socket.on('rsvp')
+def rsvp(data):
 
-    request_info = request.get_json()
-    user_id = request_info['user_id']
-    event_id = request_info['event_id']
+    # request_info = request.get_json()
+    user_id = data['user_id']
+    event_id = data['event_id']
 
     profile = db.session.get(Profile, user_id)
     event = db.session.get(Event, event_id)
 
     if profile and event:
         event.attendees.append(profile)
+        profile.dancing = True
         db.session.commit()
         # profile.events.append(event)
+        print(f"RSVPed User {user_id} for Event {event_id}")
         # Q: is there more to it?
     else:
         # TODO: error handling
