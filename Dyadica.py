@@ -244,8 +244,6 @@ def end_event(event_id: int):
 @app.route('/make_pairs', methods=['POST'])
 def make_pairs():
 
-    people = db.session.query(Profile).all()
-
     request_info = request.get_json()
     event_id = request_info['event_id']
 
@@ -285,9 +283,16 @@ def make_pairs():
 
 # TODO: figure out the logistics on this
 # @app.route()
-def accept_decline():
+@socket.on("decline")
+def decline(data):
     # Q: What happens on decline? Repaired? just not paired?
-    pass
+    pair_id = data['pair_id']
+    pair_sid = active_users[pair_id]
+
+    socket.emit("decline",
+                to=pair_sid)
+    
+    print("Pairing Declined")
 
 
 # Q: how does starting a dance fit with accept/decline??? esspecially if you don't get the location detection going
