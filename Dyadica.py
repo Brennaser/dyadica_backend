@@ -340,7 +340,7 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    socket.run(app, debug=True)
+    socket.run(app, debug=True, host="0.0.0.0")
 
     # Save all changes made
     db.session.commit()
