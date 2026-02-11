@@ -40,7 +40,7 @@ class Profile(db.Model):
         self.fields = new_fields
 
 
-    def block_user(self, other: Profile):
+    def block_user(self, other):
         self.blocked.append(other)
 
 
