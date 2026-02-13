@@ -30,6 +30,15 @@ socket = SocketIO(app)
 active_users = {}
 
 
+def find_active_user(sid):
+
+    for uid in active_users.keys():
+        if active_users[uid] == sid:
+            return uid
+        
+    return -1
+
+
 @socket.on('update_profile')
 def update_profile(profile_info):
 
@@ -99,11 +108,7 @@ def check_in():
 def toggle_user_break():
 
     
-    user_id = -1
-
-    for uid in active_users.keys():
-        if active_users[uid] == request.sid:
-            user_id = uid
+    user_id = find_active_user(request.sid)
 
     if user_id == -1:
         return redirect('/')
@@ -329,9 +334,14 @@ def connect():
 
 
 @socket.on('disconnect')
-def disconnect():
-    active_users.pop(request.sid)
+def disconnect(_):
+    user_id = find_active_user(request.sid)
+    active_users.pop(user_id)
     print(f'Disconnected {request.sid}')
+
+    # Ignore "AssertionError: write() before start_response"
+    # Harmless race condition caused by the dev server's limitations when 
+    # dealing with WebSockets
 
 
 # TODO: link sources
