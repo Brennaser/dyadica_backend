@@ -83,25 +83,25 @@ def rsvp(data):
     return redirect('/')
 
 
-@app.route('/check_in', methods=['POST'])
-def check_in():
+# @app.route('/check_in', methods=['POST'])
+# def check_in():
     
-    request_info = request.get_json()
-    user_id = request_info['user_id']
-    event_id = request_info['event_id']
+#     request_info = request.get_json()
+#     user_id = request_info['user_id']
+#     event_id = request_info['event_id']
 
-    profile = db.session.get(Profile, user_id)
-    event = db.session.get(Event, event_id)
+#     profile = db.session.get(Profile, user_id)
+#     event = db.session.get(Event, event_id)
 
-    if profile and event:
-        # FIX: check in needs to be reworked
-        event.check_in_attendee(user_id)
-        db.session.commit()
-    else:
-        # TODO: error handling
-        pass
+#     if profile and event:
+#         # FIX: check in needs to be reworked
+#         event.check_in_attendee(user_id)
+#         db.session.commit()
+#     else:
+#         # TODO: error handling
+#         pass
 
-    return redirect('/')
+#     return redirect('/')
 
 
 @socket.on("toggle_user_break")
@@ -129,18 +129,18 @@ def toggle_user_break():
 
 # TODO?: rework with sockets
 # FIX?: rework with the split app model
-@app.route('/block_user', methods=['POST'])
-def block_user():
-    request_info = request.get_json()
-    user_a_id = request_info['user_a_id']
-    user_b_id = request_info['user_b_id']
+# @app.route('/block_user', methods=['POST'])
+# def block_user():
+#     request_info = request.get_json()
+#     user_a_id = request_info['user_a_id']
+#     user_b_id = request_info['user_b_id']
 
-    user_a = db.session.get(Profile, user_a_id)
-    user_b = db.session.get(Profile, user_b_id)
+#     user_a = db.session.get(Profile, user_a_id)
+#     user_b = db.session.get(Profile, user_b_id)
 
-    # FIX: the blocked list is broken in the database
-    user_a.block_user(user_b)
-    db.session.commit()
+#     # FIX: the blocked list is broken in the database
+#     user_a.block_user(user_b)
+#     db.session.commit()
 
 
 @app.route('/new_event', methods=['POST'])
@@ -209,40 +209,40 @@ def update_event():
     return redirect('/')
 
 
-@app.route('/start_event', methods=['POST'])
-def start_event():
+# @app.route('/start_event', methods=['POST'])
+# def start_event():
 
-    event_info = request.get_json()
-    event_id = event_info['event_id']
+#     event_info = request.get_json()
+#     event_id = event_info['event_id']
 
-    event = db.session.get(Event, event_id)
+#     event = db.session.get(Event, event_id)
 
-    if event:
-        event.start_event()
-        db.session.commit()
-    else:
-        # TODO: error handling
-        pass
+#     if event:
+#         event.start_event()
+#         db.session.commit()
+#     else:
+#         # TODO: error handling
+#         pass
 
-    return redirect('/')
+#     return redirect('/')
 
 
-@app.route('/end_event', methods=[])
-def end_event(event_id: int):
+# @app.route('/end_event', methods=[])
+# def end_event(event_id: int):
 
-    event_info = request.get_json()
-    event_id = event_info['event_id']
+#     event_info = request.get_json()
+#     event_id = event_info['event_id']
 
-    event = db.session.get(Event, event_id)
+#     event = db.session.get(Event, event_id)
 
-    if event:
-        event.end_event()
-        db.session.commit()
-    else:
-        # TODO: error handling
-        pass
+#     if event:
+#         event.end_event()
+#         db.session.commit()
+#     else:
+#         # TODO: error handling
+#         pass
 
-    return redirect('/')
+#     return redirect('/')
 
 
 @app.route('/make_pairs', methods=['POST'])
