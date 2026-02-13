@@ -70,7 +70,7 @@ def rsvp(data):
     profile = db.session.get(Profile, user_id)
     event = db.session.get(Event, event_id)
 
-    if profile and event:
+    if (profile and event) and profile not in event.attendees:
         event.attendees.append(profile)
         profile.dancing = True
         db.session.commit()
@@ -164,7 +164,7 @@ def make_event():
 
 @app.route('/test')
 def test():
-    t = db.session.query(Profile).all()
+    t = db.session.query(Event).all()
     print(t.__repr__())
     return [temp.__repr__() for temp in t]
 
@@ -256,6 +256,7 @@ def make_pairs():
     if len(event.pair_scores) == 0:
         event.start_event()
 
+    [print(attendee) for attendee in event.attendees]
     pairs = event.make_pairs()
     event.adjust_scores(pairs)
     db.session.commit()
