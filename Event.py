@@ -222,6 +222,11 @@ class Event(db.Model):
 
         pair_scores, _ = self.scores_to_df()
 
+        # If someone has joined the event late (or left the event)
+        if len(pair_scores.columns) != len(self.attendees):
+            self.start_event()
+            pair_scores, _ = self.scores_to_df()
+
         # Mask out those who are not dancing
         dancing_mask = pd.DataFrame([dancer.dancing for dancer in self.attendees], index=[dancer.id for dancer in self.attendees])
         dancing_mask = dancing_mask[dancing_mask[0]].index
@@ -280,5 +285,5 @@ class Event(db.Model):
 
 
     def __repr__(self):
-        return f"Event Name: {self.name}, Date: {self.date} {self.id} Owner: {self.owner}\nPair Scores:\n{self.pair_scores}"
+        return f"Event Name: {self.name}, Date: {self.date} {self.id} Owner: {self.owner}\nAttendees: {self.attendees}\nPair Scores:\n{self.pair_scores}"
 
