@@ -245,6 +245,10 @@ class Event(db.Model):
 
         for dancer_a_idx in sorted_pairs:
             dancer_b_idx = best_pair[dancer_a_idx]
+
+            # Do not pair a dancer with themself
+            if dancer_a_idx == dancer_b_idx:
+                continue
             
             if not paired[dancer_a_idx] and not paired[dancer_b_idx]:
                 pairings.append((dancer_ids[dancer_a_idx], dancer_ids[dancer_b_idx]))
