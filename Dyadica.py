@@ -373,6 +373,8 @@ def disconnect(_):
 # TODO: link sources
 if __name__ == "__main__":
 
+    round = 0
+
     dyadica_data['max_pair_scores'] = []
     dyadica_data['pairs_made'] = {}
     dyadica_data['pairs_declined'] = {}
