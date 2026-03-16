@@ -395,7 +395,7 @@ if __name__ == "__main__":
 
     # make sure all data is being saved
     with open('dyadica_data.json', 'x') as file:
-        json.dump(dyadica_data, file)
+        json.dump(dyadica_data, file, indent=4)
         print('dyadica_data saved')
 
     # Save all changes made
