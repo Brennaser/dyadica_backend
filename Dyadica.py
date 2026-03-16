@@ -3,6 +3,8 @@ from flask_socketio import SocketIO
 
 from extensions import db
 
+import json
+
 from Event import Event
 from Profile import Profile
 
@@ -28,6 +30,10 @@ app.config['SECRET_KEY'] = 'vnajdsf;adjaodlkd;jkavds'
 socket = SocketIO(app)
 
 active_users = {}
+
+# Variables for tracking data during the study
+dyadica_data = {}
+round = 0
 
 
 def find_active_user(sid):
@@ -75,7 +81,8 @@ def rsvp(data):
         profile.dancing = True
         db.session.commit()
         # profile.events.append(event)
-        print(f"RSVPed User {user_id} for Event {event_id}")
+        print(f"RSVPed User {user_id} {profile.name} for Event {event_id} {event.name}")
+        print(f"{len(event.attendees)} attendees RVSPed for {event.name}")
     else:
         # TODO: error handling
         pass
@@ -121,6 +128,12 @@ def toggle_user_break():
         socket.emit("toggle_user_break",
                     {"dancing": profile.dancing},
                     to=request.sid)
+        
+        if user_id not in dyadica_data['opt_outs']:
+            dyadica_data['opt_outs'][user_id] = []
+
+        dyadica_data['opt_outs'][user_id].append((round, profile.dancing))
+        print(dyadica_data)
     else:
         # TODO: error handling
         pass
@@ -255,8 +268,12 @@ def make_pairs():
 
     if len(event.pair_scores) == 0:
         event.start_event()
+        pair_scores = event.scores_to_df(event.max_pair_scores)
+        dyadica_data['max_pair_scores'] = pair_scores
 
     [print(attendee) for attendee in event.attendees]
+
+    round += 1
     pairs = event.make_pairs()
     event.adjust_scores(pairs)
     db.session.commit()
@@ -265,7 +282,8 @@ def make_pairs():
                                 "name": p.name,
                                 "fields": p.fields,
                                 "dancing": p.dancing}
-
+    
+    dyadica_data['pairs_made'][round] = pairs
     for a, b in pairs:
         a_sid = active_users[int(a)]
         b_sid = active_users[int(b)]
@@ -294,6 +312,13 @@ def decline(data):
     socket.emit("decline",
                 to=pair_sid)
     
+    user_id = active_users[find_active_user(request.sid)]
+
+    if round not in dyadica_data['pairs_declined']:
+        dyadica_data['pairs_declined'][round] = []
+
+    dyadica_data['pairs_declined'][round].append((user_id, pair_id))
+
     print("Pairing Declined")
 
 
@@ -348,10 +373,21 @@ def disconnect(_):
 # TODO: link sources
 if __name__ == "__main__":
 
+    dyadica_data['max_pair_scores'] = []
+    dyadica_data['pairs_made'] = {}
+    dyadica_data['pairs_declined'] = {}
+    dyadica_data['opt_outs'] = {}
+
     with app.app_context():
         db.create_all()
 
     socket.run(app, debug=True, host="0.0.0.0")
 
+    # make sure all data is being saved
+    with open('dyadica_data.json', 'x') as file:
+        json.dump(dyadica_data, file)
+        print('dyadica_data saved')
+
     # Save all changes made
     db.session.commit()
+
