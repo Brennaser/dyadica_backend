@@ -114,6 +114,8 @@ def rsvp(data):
 @socket.on("toggle_user_break")
 def toggle_user_break():
 
+    global dyadica_data
+    global round
     
     user_id = find_active_user(request.sid)
 
@@ -261,6 +263,9 @@ def update_event():
 @app.route('/make_pairs', methods=['POST'])
 def make_pairs():
 
+    global dyadica_data
+    global round
+
     request_info = request.get_json()
     event_id = request_info['event_id']
 
@@ -273,7 +278,6 @@ def make_pairs():
 
     [print(attendee) for attendee in event.attendees]
 
-    global round
     round += 1
     pairs = event.make_pairs()
     event.adjust_scores(pairs)
@@ -307,6 +311,9 @@ def make_pairs():
 
 @socket.on("decline")
 def decline(data):
+
+    global dyadica_data
+
     pair_id = data['pair_id']
     pair_sid = active_users[pair_id]
 
@@ -373,7 +380,6 @@ def disconnect(_):
 
 # TODO: link sources
 if __name__ == "__main__":
-
     round = 0
 
     dyadica_data['max_pair_scores'] = []
