@@ -321,7 +321,7 @@ def decline(data):
     socket.emit("decline",
                 to=pair_sid)
     
-    user_id = active_users[find_active_user(request.sid)]
+    user_id = find_active_user(request.sid)
 
     if round not in dyadica_data['pairs_declined']:
         dyadica_data['pairs_declined'][round] = []
