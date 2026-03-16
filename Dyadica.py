@@ -289,6 +289,7 @@ def make_pairs():
                                 "dancing": p.dancing}
     
     dyadica_data['pairs_made'][round] = pairs
+    print(dyadica_data)
     for a, b in pairs:
         a_sid = active_users[int(a)]
         b_sid = active_users[int(b)]
