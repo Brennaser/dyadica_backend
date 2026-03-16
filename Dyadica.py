@@ -268,7 +268,7 @@ def make_pairs():
 
     if len(event.pair_scores) == 0:
         event.start_event()
-        _, pair_scores = event.scores_to_df(event.pair_scores, event.max_pair_scores)
+        _, pair_scores = Event.scores_to_df(event.pair_scores, event.max_pair_scores)
         dyadica_data['max_pair_scores'] = pair_scores
 
     [print(attendee) for attendee in event.attendees]
