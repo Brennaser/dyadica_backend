@@ -273,6 +273,7 @@ def make_pairs():
 
     [print(attendee) for attendee in event.attendees]
 
+    global round
     round += 1
     pairs = event.make_pairs()
     event.adjust_scores(pairs)
