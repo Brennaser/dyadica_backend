@@ -165,6 +165,10 @@ class Event(db.Model):
         if score_max == score_min:
             # iff all scores are the same, set them all to one
             pair_scores = pd.DataFrame(1, index=pair_scores.index, columns=pair_scores.columns)
+
+            for dancer in pair_scores.columns:
+                pair_scores[dancer][dancer] = np.nan
+
         else:
             # else, just normalize scores
             pair_scores = (pair_scores - score_min) / (score_max - score_min)
