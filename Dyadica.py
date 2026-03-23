@@ -382,8 +382,19 @@ def disconnect(_):
     # dealing with WebSockets
 
 
+def make_json_data():
+
+    # make sure all data is being saved
+    with open('dyadica_data.json', 'w+') as f:
+        json.dump(dyadica_data, f, indent=4)
+        print('dyadica_data saved')
+
+    return dyadica_data
+
+
 # TODO: link sources
 if __name__ == "__main__":
+
     round = 0
 
     dyadica_data['max_pair_scores'] = []
@@ -394,13 +405,15 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    socket.run(app, debug=True, host="0.0.0.0")
-
-    # make sure all data is being saved
-    with open('dyadica_data.json', 'x') as file:
-        json.dump(dyadica_data, file, indent=4)
-        print('dyadica_data saved')
+    socket.run(app, debug=False, host="0.0.0.0")
 
     # Save all changes made
-    db.session.commit()
+    with app.app_context():
+
+        print('here')
+        db.session.commit()
+
+        print(dyadica_data)
+
+        make_json_data()
 
