@@ -414,7 +414,7 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    socket.run(app, debug=True, host="0.0.0.0")
+    socket.run(app, debug=False, host="0.0.0.0" allow_unsafe_werkzeug=True)
 
     # Save all changes made
     with app.app_context():
