@@ -182,7 +182,8 @@ def make_event():
 def list_active_users():
 
     users = db.session.query(Profile).filter(Profile.id.in_(active_users.keys())).all()
-    return [user.__repr__() for user in users]
+    [print(user) for user in users]
+    return f'{users}'
 
 
 @app.route('/test')
