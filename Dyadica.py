@@ -177,6 +177,14 @@ def make_event():
 
     return redirect('/')
 
+
+@app.route('/active_users')
+def list_active_users():
+
+    users = db.session.query(Profile).filter(Profile.id.in_(active_users.keys())).all()
+    return [user.__repr__() for user in users]
+
+
 @app.route('/test')
 def test():
     t = db.session.query(Event).all()
@@ -346,6 +354,7 @@ def user_id(data):
                     'name': profile.name,
                     'fields': profile.fields},
                     to=request.sid)
+        print(f'Logged in User {profile.id}')
     else:
         default_fields = {"lead/follow": {'Lead': False, 'Follow': False},
                           "style": {'Lindy Hop': False, "Westie": False, "Balboa": False},
