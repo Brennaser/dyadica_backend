@@ -62,5 +62,5 @@ class Profile(db.Model):
 
 
     def __repr__(self):
-        return f'{self.name}, {self.id}, dancing: {self.dancing}'
+        return f'{self.name}, {self.id}, dancing: {self.dancing}, rsvped: {[event.name for event in self.events]}'
 
